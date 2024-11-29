@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品利润计算表</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .calculator-container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 500px;
+    }
+    h2 {
+      text-align: center;
+    }
+    .input-group {
+      margin: 15px 0;
+    }
+    .input-group label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .output-group {
+      margin: 10px 0;
+    }
+    .output-group p {
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .result {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .result p {
+      font-size: 18px;
+      color: red;
+    }
+    .btn {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn:disabled {
+      background-color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator-container">
+    <h2>商品利润计算器</h2>
+
+    <div class="input-group">
+      <label for="amazonPrice">亚马逊商品价格 (元)</label>
+      <input type="number" id="amazonPrice" placeholder="请输入亚马逊商品价格">
+    </div>
+    <div class="input-group">
+      <label for="amazonShipping">亚马逊商品运费 (元)</label>
+      <input type="number" id="amazonShipping" placeholder="请输入亚马逊商品运费">
+    </div>
+    <div class="input-group">
+      <label for="dcCost">大健云仓采购成本 (元)</label>
+      <input type="number" id="dcCost" placeholder="请输入大健云仓采购成本">
+    </div>
+    <div class="input-group">
+      <label for="dcShipping">大健云仓运费 (元)</label>
+      <input type="number" id="dcShipping" placeholder="请输入大健云仓运费">
+    </div>
+
+    <div class="output-group">
+      <p>佣金费用 (元): <span id="commission">0.00</span></p>
+      <p>广告费用 (元): <span id="adCost">0.00</span></p>
+      <p>退货费用 (元): <span id="returnCost">0.00</span></p>
+      <p>毛利率: <span id="grossProfitRate">0.00%</span></p>
+    </div>
+
+    <div class="result">
+      <p id="resultMessage"></p>
+    </div>
+
+    <button class="btn" id="calculateBtn" onclick="calculateProfit()">计算</button>
+  </div>
+
+  <script>
+    function calculateProfit() {
+      // 获取用户输入的数值
+      const amazonPrice = parseFloat(document.getElementById('amazonPrice').value);
+      const amazonShipping = parseFloat(document.getElementById('amazonShipping').value);
+      const dcCost = parseFloat(document.getElementById('dcCost').value);
+      const dcShipping = parseFloat(document.getElementById('dcShipping').value);
+
+      // 校验输入
+      if (isNaN(amazonPrice) || isNaN(amazonShipping) || isNaN(dcCost) || isNaN(dcShipping)) {
+        alert('请输入所有字段');
+        return;
+      }
+
+      // 计算佣金费用
+      function calculateCommission(amazonPrice, amazonShipping) {
+        const totalAmount = amazonPrice + amazonShipping;  // 总金额 = 亚马逊商品价格 + 亚马逊商品运费
+        let commission = 0;
+
+        // 佣金计算：总金额 <= 200 时，佣金为总金额的 15%
+        if (totalAmount <= 200) {
+          commission = totalAmount * 0.15;
+        } else if (totalAmount > 200) {
+          // 总金额大于200时，计算超出部分
+          commission = (totalAmount - 200) * 0.10 + 200 * 0.15;
+        }
+
+        return Number(commission);
+      }
+
+      // 计算佣金费用
+      const commissionFee = calculateCommission(amazonPrice, amazonShipping);
+
+      // 计算广告费用
+      const adCost = (amazonPrice+amazonShipping) * 0.075;
+
+      // 计算退货费用
+      const returnCost = (amazonPrice+amazonShipping) * 0.075;
+
+      // 计算毛利润
+      const grossProfitRate = (amazonPrice - dcCost - commissionFee - dcShipping - adCost - returnCost) + amazonShipping;
+      // const grossProfitRate = (grossProfit / amazonPrice) * 100;
+
+      // 显示结果
+      document.getElementById('commission').textContent = commissionFee.toFixed(2);
+      document.getElementById('adCost').textContent = adCost.toFixed(2);
+      document.getElementById('returnCost').textContent = returnCost.toFixed(2);
+      document.getElementById('grossProfitRate').textContent = grossProfitRate.toFixed(2) + '%';
+
+      // 判断毛利率是否满足要求
+      const resultMessage = document.getElementById('resultMessage');
+      if (grossProfitRate >= 10) {
+        resultMessage.textContent = '有搞头！！';
+        resultMessage.style.color = 'green';
+      } else {
+        resultMessage.textContent = '没搞头! !';
+        resultMessage.style.color = 'red';
+      }
+    }
+
+    // 监听输入框变化，启用计算按钮
+    document.querySelectorAll('input').forEach(input => {
+      input.addEventListener('input', () => {
+        const isFilled = Array.from(document.querySelectorAll('input')).every(input => input.value !== '');
+        document.getElementById('calculateBtn').disabled = !isFilled;
+      });
+    });
+  </script>
+</body>
+</html>
